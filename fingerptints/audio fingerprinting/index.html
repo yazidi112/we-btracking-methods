@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Document</title>
+    </head>
+
+    <body>
+        <script>
+            /*
+                            1. First, we need to create an array to store frequency values.
+                        */
+
+            let freq_data = [];
+            /*
+                2. We create an AudioContext object and create the various nodes needed 
+                to generate signal and collect the information using the built-in methods
+                of the AudioContext object.
+            */
+            // Create nodes
+            const ctx = new AudioContext(); // AudioContext Object
+            const oscillator = ctx.createOscillator(); // OscillatorNode
+            const analyser = ctx.createAnalyser(); // AnalyserNode
+            const gain = ctx.createGain(); // GainNode
+            const scriptProcessor = ctx.createScriptProcessor(4096, 1, 1); // ScriptProcessorNode
+            /*
+                3. We disable the volume and connect the nodes with each other.
+            */
+            // Disable volume
+            gain.gain.value = 0;
+
+            // Connect oscillator output (OscillatorNode) to analyser input
+            oscillator.connect(analyser);
+            // Connect analyser output (AnalyserNode) to scriptProcessor input
+            analyser.connect(scriptProcessor);
+            // Connect scriptProcessor output (ScriptProcessorNode) to gain input
+            scriptProcessor.connect(gain);
+            // Connect gain output (GainNode) to AudioContext destination
+            gain.connect(ctx.destination);
+
+            /*
+            4. Using the ScriptProcessorNode, we create a function that collects frequency data while the audio is being processed.
+            The function creates a Float32Array typed array with a length that equals the number of (frequency) data values in the AnalyserNode and then populates it with the values.
+            These values are then copied to the array we created earlier (freq_data) so we can log them easily to an output.
+            We disconnect the nodes and log the output.
+            */
+            scriptProcessor.onaudioprocess = function(bins) {
+                // The number of (frequency) data values
+                bins = new Float32Array(analyser.frequencyBinCount);
+                // Fill the Float32Array array of these based on values
+                analyser.getFloatFrequencyData(bins);
+
+                // Copy frequency data to 'freq_data' array
+                for (var i = 0; i < bins.length; i = i + 1) {
+                    freq_data.push(bins[i]);
+                }
+
+                // Disconnect the nodes from each other
+                analyser.disconnect();
+                scriptProcessor.disconnect();
+                gain.disconnect();
+
+                // Log output of frequency data
+                console.log(freq_data);
+
+            };
+            /*
+                5.We start playing the tone so the audio is generated and processed in accordance with the function.
+            */
+            // Start playing tone
+            oscillator.start(0);
+        </script>
+    </body>
+
+</html>
